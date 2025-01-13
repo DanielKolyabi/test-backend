@@ -1,22 +1,19 @@
-
 package mobi.sevenwinds.app.author
-import org.jetbrains.exposed.dao.EntityID
-import org.jetbrains.exposed.dao.IntEntity
-import org.jetbrains.exposed.dao.IntEntityClass
-import org.jetbrains.exposed.dao.IntIdTable
-object AuthorTable : IntIdTable("author") {
-    val fullName = text("full_name")
-    val createdAt = datetime("created_at")
-}
-class AuthorEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<AuthorEntity>(AuthorTable)
-    var fullName by AuthorTable.fullName
-    var createdAt by AuthorTable.createdAt
-    fun toResponse(): AuthorCreateResponse {
-        return AuthorCreateResponse(
-            id = this.id.value,
-            fullName = this.fullName,
-            createdAt = this.createdAt.toString()
-        )
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.joda.time.DateTime
+
+object AuthorService {
+    suspend fun addAuthor(body: AuthorCreateRequest): AuthorCreateResponse = withContext(Dispatchers.IO) {
+        transaction {
+            val entity = AuthorEntity.new {
+                this.fullName = body.fullName
+                this.createdAt = DateTime.now()
+            }
+
+            return@transaction entity.toResponse()
+        }
     }
 }
